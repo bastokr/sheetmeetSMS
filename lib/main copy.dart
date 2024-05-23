@@ -1,12 +1,9 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:http/http.dart' as http;
-
-import 'api_client.dart';
 
 void main() => runApp(MyApp());
 
@@ -18,8 +15,6 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   late TextEditingController _controllerPeople, _controllerMessage;
   String? _message, body;
-  String sendMessage = "문자 발송";
-
   String _canSendSMSMessage = 'Check is not run.';
   List<String> people = [];
   bool sendDirect = false;
@@ -137,7 +132,8 @@ class _MyAppState extends State<MyApp> {
               leading: const Icon(Icons.people),
               title: TextField(
                 controller: _controllerPeople,
-                decoration: const InputDecoration(labelText: '테스트 전번 추가'),
+                decoration:
+                    const InputDecoration(labelText: 'Add Phone Number'),
                 keyboardType: TextInputType.number,
                 onChanged: (String value) => setState(() {}),
               ),
@@ -155,7 +151,7 @@ class _MyAppState extends State<MyApp> {
             ListTile(
               leading: const Icon(Icons.message),
               title: TextField(
-                decoration: const InputDecoration(labelText: '테스트 메세지'),
+                decoration: const InputDecoration(labelText: 'Add Message'),
                 controller: _controllerMessage,
                 onChanged: (String value) => setState(() {}),
               ),
@@ -173,7 +169,7 @@ class _MyAppState extends State<MyApp> {
               ),
             ),
             SwitchListTile(
-                title: const Text('서버메세지 보내기'),
+                title: const Text('Send Direct'),
                 subtitle: const Text(
                     'Should we skip the additional dialog? (Android only)'),
                 value: sendDirect,
@@ -195,7 +191,7 @@ class _MyAppState extends State<MyApp> {
                   _send();
                 },
                 child: Text(
-                  sendMessage,
+                  'SEND',
                   style: Theme.of(context).textTheme.displayMedium,
                 ),
               ),
@@ -223,51 +219,11 @@ class _MyAppState extends State<MyApp> {
     );
   }
 
-  void _send() async {
-    Iterable jsonResponse = [];
-    if (sendDirect) {
-      setState(() {
-        sendMessage = "발송 시작";
-      });
-
-      var status = await Permission.sms.status;
-      if (status.isDenied) {
-        Map<Permission, PermissionStatus> statuses = await [
-          Permission.sms,
-          Permission.phone,
-        ].request();
-      }
-      var jsonData = await NetworkHelper(
-              url: '/api/list/okShop/MENU_MGT_MARKET_S004/mb4/Y')
-          .getData();
-      jsonResponse = jsonData["rows"];
-      int i = 1;
-      jsonResponse.forEach((element) async {
-        var mb2 = element["mb2"];
-        var mb3 = element["mb3"];
-        var mb0 = element["mb0"];
-        final result =
-            await _channel.invokeMethod("sendInvokeMessage", [mb2, mb3]);
-
-        _resultData = result.toString();
-        setState(() {
-          sendMessage = "문자 발송완료 ${i++}건";
-        });
-
-        await NetworkHelper(
-                url: "/SETDATA/okShop/MENU_MGT_MARKET_S004/update/mb0/$mb0")
-            .sendPostData({"mb4": "SendOK", "mb5": _resultData.toString()}, "");
-      });
-
-      setState(() {
-        sendMessage = "문자 발송완료 ${jsonResponse.length}건";
-      });
+  void _send() {
+    if (people.isEmpty) {
+      setState(() => _message = 'At Least 1 Person or Message Required');
     } else {
-      if (people.isEmpty) {
-        setState(() => _message = 'At Least 1 Person or Message Required');
-      } else {
-        _sendSMS(people);
-      }
+      _sendSMS(people);
     }
   }
 }
