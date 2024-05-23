@@ -1,4 +1,4 @@
-name: "영원무역SMS"
+name: "youngwonsms"
 description: "SMS발송"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -17,7 +17,7 @@ publish_to: "none" # Remove this line if you wish to publish to pub.dev
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
 version: 1.0.0+1
-
+ 
 environment:
   sdk: ">=3.2.3 <4.0.0"
 
@@ -35,7 +35,10 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.2
   permission_handler: ^11.3.1
-  http: ^1.2.1
+  http: ^1.2.0
+  flutter_launcher_icons: ^0.13.1
+  intl: ^0.19.0
+   
 
 dev_dependencies:
   flutter_test:
@@ -58,6 +61,9 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
+
+  assets:
+    - assets/
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg
@@ -88,3 +94,52 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages
+
+# 만드는 명령어 flutter pub run flutter_launcher_icons:main
+flutter_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/youngwon.png"
+  background_color: "#000000"
+
+# flutter_native_splash.yaml 생성
+#flutter_native_splash:
+#  image: "assets/icon/seesaw_icon.png"
+#  color: ffffff
+# dart run flutter_native_splash:create
+
+module:
+  androidX: true
+# 빌드방법
+
+# version: 1.1.0+10 버젼변경
+# flutter build appbundle
+# flutter build apk --release --target-platform=android-arm64
+#    def keystoreProperties = new Properties()
+#    def keystorePropertiesFile = rootProject.file('key.properties')
+#    if (keystorePropertiesFile.exists()) {
+#       keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+#   }
+
+#  signingConfigs {
+#      release {
+#           keyAlias keystoreProperties['keyAlias']
+#           keyPassword keystoreProperties['keyPassword']
+#           storeFile file(keystoreProperties['storeFile'])
+#           storePassword keystoreProperties['storePassword']
+#       }
+#   }
+
+# flutter debug -d chrome --no-sound-null-safety --web-renderer=html 디버깅 실행
+# CORS 작동하지 않는 PHP 복붙노트 -
+# https://cnpnote.tistory.com/entry/CORS-%EC%9E%91%EB%8F%99%ED%95%98%EC%A7%80-%EC%95%8A%EB%8A%94-PHP
+# keytool -list -v -alias androiddebugkey -keystore   debug.keystore -storepass android -keypass android
+# keytool -v -list -keystore .\toolsdakey.jks
+# ./gradlew app:signingReport
+# keytool -v -list -keystore .\legalmybot.keystore
+#테햔이
+#SHA1: 86:43:40:EB:A2:43:FF:68:FF:29:A5:39:05:43:6F:08:53:1C:22:A9
+#SHA256: B1:67:3C:CC:50:DF:AA:AA:C2:16:21:DB:E6:69:53:41:46:84:35:0E:D4:A1:EF:A0:16:B7:D9:EC:07:15:3F:2E
+#C:\>keytool -exportcert -alias upload -keystore C:\git\ecarpluss\android\app\upload-keystore.jks | openssl sha1 -binary | openssl base64
+#Enter keystore password:  ecarplug
+#6HpWnr2TJu5IEfFY4b+5ZKEx6uw=

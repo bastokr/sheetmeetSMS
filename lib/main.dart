@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:http/http.dart' as http;
-
+import 'package:intl/intl.dart';
 import 'api_client.dart';
 
 void main() => runApp(MyApp());
@@ -20,15 +20,14 @@ class _MyAppState extends State<MyApp> {
   String? _message, body;
   String sendMessage = "문자 발송";
 
-  String _canSendSMSMessage = 'Check is not run.';
+  final String _canSendSMSMessage = 'Check is not run.';
   List<String> people = [];
   bool sendDirect = false;
   final MethodChannel _channel =
       const MethodChannel("com.example.native_connection_study");
 
   String _resultData = "";
-
-  static const platform = const MethodChannel('example.com/value');
+  TextEditingController log = TextEditingController();
   @override
   void initState() {
     super.initState();
@@ -51,7 +50,7 @@ class _MyAppState extends State<MyApp> {
     var status = await Permission.sms.status;
 
     if (status.isDenied) {
-      Map<Permission, PermissionStatus> statuses = await [
+      await [
         Permission.sms,
         Permission.phone,
       ].request();
@@ -200,6 +199,13 @@ class _MyAppState extends State<MyApp> {
                 ),
               ),
             ),
+            TextFormField(
+              controller: log,
+              minLines:
+                  6, // any number you need (It works as the rows for the textarea)
+              keyboardType: TextInputType.multiline,
+              maxLines: null,
+            ),
             Visibility(
               visible: _message != null,
               child: Row(
@@ -223,6 +229,13 @@ class _MyAppState extends State<MyApp> {
     );
   }
 
+  String getToday() {
+    DateTime now = DateTime.now();
+    DateFormat formatter = DateFormat('yyyy-MM-dd');
+    var strToday = formatter.format(now);
+    return strToday;
+  }
+
   void _send() async {
     Iterable jsonResponse = [];
     if (sendDirect) {
@@ -232,32 +245,42 @@ class _MyAppState extends State<MyApp> {
 
       var status = await Permission.sms.status;
       if (status.isDenied) {
-        Map<Permission, PermissionStatus> statuses = await [
+        await [
           Permission.sms,
           Permission.phone,
         ].request();
       }
+      setState(() {
+        sendMessage = "발송 시작1";
+      });
       var jsonData = await NetworkHelper(
               url: '/api/list/okShop/MENU_MGT_MARKET_S004/mb4/Y')
           .getData();
       jsonResponse = jsonData["rows"];
+
+      setState(() {
+        sendMessage = "발송 시작2";
+      });
+
       int i = 1;
-      jsonResponse.forEach((element) async {
+      for (var element in jsonResponse) {
         var mb2 = element["mb2"];
         var mb3 = element["mb3"];
         var mb0 = element["mb0"];
+
         final result =
             await _channel.invokeMethod("sendInvokeMessage", [mb2, mb3]);
 
         _resultData = result.toString();
         setState(() {
           sendMessage = "문자 발송완료 ${i++}건";
+          log.text = "${log.text + mb2 + mb3}\n";
         });
 
         await NetworkHelper(
                 url: "/SETDATA/okShop/MENU_MGT_MARKET_S004/update/mb0/$mb0")
             .sendPostData({"mb4": "SendOK", "mb5": _resultData.toString()}, "");
-      });
+      }
 
       setState(() {
         sendMessage = "문자 발송완료 ${jsonResponse.length}건";

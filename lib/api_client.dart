@@ -13,7 +13,7 @@ class NetworkHelper {
 
   Future getData() async {
     http.Response response = await http.get(
-      Uri.parse(server_url + url),
+      Uri.https(domain, url),
       headers: <String, String>{
         'Content-Type': 'application/json',
       },
