@@ -24,52 +24,75 @@ class _MyAppState extends State<MyApp> {
   List<String> people = [];
   bool sendDirect = false;
   final MethodChannel _channel =
-      const MethodChannel("com.example.native_connection_study");
-
+      const MethodChannel("com.shosft.youngwonsms/mms");
+  List<DataRow> data = [];
   String _resultData = "";
   TextEditingController log = TextEditingController();
+
+  var flag = {};
   @override
   void initState() {
     super.initState();
     initPlatformState();
+    getData();
+  }
+
+  getData() async {
+    DateFormat dateFormat = DateFormat("yyyy-MM-dd");
+    String string = dateFormat.format(DateTime.now());
+    data = [];
+    var jsonData =
+        await NetworkHelper(url: '/api/list/okShop/MENU_MGT_MARKET_S004/mb4/Y')
+            .getData();
+    var jsonResponse = jsonData["rows"];
+
+    for (var element in jsonResponse) {
+      var mb0 = element["mb0"];
+      var mb2 = element["mb2"];
+      var mb3 = element["mb3"];
+      var mb4 = element["mb4"];
+      flag[mb2] = true;
+      setState(() {
+        data.add(DataRow(cells: [
+          DataCell(Text(
+            element["mb1"],
+            style: TextStyle(fontSize: 10),
+          )),
+          DataCell(Text(mb2)),
+          DataCell(ElevatedButton(
+            onPressed: () async {
+              setState(() {
+                flag[mb2] = false;
+              });
+
+              var response = await NetworkHelper(
+                      url:
+                          "/SETDATA/okShop/MENU_MGT_MARKET_S004/update/mb0/$mb0")
+                  .sendPostData({"mb4": "SendOK", "mb5": "발송완료"}, "").then(
+                      (value) => {getData()});
+
+              _channel.invokeMethod("sendMMS", {
+                'phoneNumber': mb2,
+                'message': mb3,
+              });
+              //getData();
+            },
+            style: ButtonStyle(
+                backgroundColor: MaterialStatePropertyAll<Color>(
+                    mb4 == 'Y' ? Colors.blue : Colors.grey)),
+            child: Text(
+              "발송",
+              style: TextStyle(color: Colors.white),
+            ),
+          )),
+        ]));
+      });
+    }
   }
 
   Future<void> initPlatformState() async {
     _controllerPeople = TextEditingController();
     _controllerMessage = TextEditingController();
-  }
-
-  Future<void> _sendSMS(List<String> recipients) async {
-    /*
-      String _result = await sendSMS(
-        message: _controllerMessage.text,
-        recipients: recipients,
-        sendDirect: sendDirect,
-      );
-*/
-    var status = await Permission.sms.status;
-
-    if (status.isDenied) {
-      await [
-        Permission.sms,
-        Permission.phone,
-      ].request();
-    }
-    if (!status.isDenied) {
-      recipients.forEach((element) async {
-        final result = await _channel.invokeMethod(
-            "sendInvokeMessage", [element, _controllerMessage.text]);
-        setState(() {
-          _resultData = result.toString();
-        });
-      });
-    }
-  }
-
-  Future<bool> _canSendSMS() async {
-    // bool _result = await canSendSMS();
-
-    return true;
   }
 
   Widget _phoneTile(String name) {
@@ -112,9 +135,14 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Scaffold(
-        appBar: AppBar(
-          title: const Text('SMS/MMS Example'),
-        ),
+        appBar: AppBar(title: const Text('영원무역 SMS  '), actions: [
+          IconButton(
+            icon: Icon(Icons.replay),
+            onPressed: () {
+              getData();
+            },
+          ),
+        ]),
         body: ListView(
           children: <Widget>[
             if (people.isEmpty)
@@ -132,80 +160,15 @@ class _MyAppState extends State<MyApp> {
                   ),
                 ),
               ),
-            ListTile(
-              leading: const Icon(Icons.people),
-              title: TextField(
-                controller: _controllerPeople,
-                decoration: const InputDecoration(labelText: '테스트 전번 추가'),
-                keyboardType: TextInputType.number,
-                onChanged: (String value) => setState(() {}),
-              ),
-              trailing: IconButton(
-                icon: const Icon(Icons.add),
-                onPressed: _controllerPeople.text.isEmpty
-                    ? null
-                    : () => setState(() {
-                          people.add(_controllerPeople.text.toString());
-                          _controllerPeople.clear();
-                        }),
-              ),
-            ),
             const Divider(),
-            ListTile(
-              leading: const Icon(Icons.message),
-              title: TextField(
-                decoration: const InputDecoration(labelText: '테스트 메세지'),
-                controller: _controllerMessage,
-                onChanged: (String value) => setState(() {}),
-              ),
-            ),
-            const Divider(),
-            ListTile(
-              title: const Text('Can send SMS'),
-              subtitle: Text(_canSendSMSMessage),
-              trailing: IconButton(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                icon: const Icon(Icons.check),
-                onPressed: () {
-                  _canSendSMS();
-                },
-              ),
-            ),
-            SwitchListTile(
-                title: const Text('서버메세지 보내기'),
-                subtitle: const Text(
-                    'Should we skip the additional dialog? (Android only)'),
-                value: sendDirect,
-                onChanged: (bool newValue) {
-                  setState(() {
-                    sendDirect = newValue;
-                  });
-                }),
-            Padding(
-              padding: const EdgeInsets.all(8),
-              child: ElevatedButton(
-                style: ButtonStyle(
-                  backgroundColor: MaterialStateProperty.resolveWith(
-                      (states) => Theme.of(context).colorScheme.secondary),
-                  padding: MaterialStateProperty.resolveWith(
-                      (states) => const EdgeInsets.symmetric(vertical: 16)),
-                ),
-                onPressed: () {
-                  _send();
-                },
-                child: Text(
-                  sendMessage,
-                  style: Theme.of(context).textTheme.displayMedium,
-                ),
-              ),
-            ),
-            TextFormField(
-              controller: log,
-              minLines:
-                  6, // any number you need (It works as the rows for the textarea)
-              keyboardType: TextInputType.multiline,
-              maxLines: null,
-            ),
+            DataTable(
+                columnSpacing: 0,
+                columns: const [
+                  DataColumn(label: Text('이름')),
+                  DataColumn(label: Text('전화')),
+                  DataColumn(label: Text('발송')),
+                ],
+                rows: data),
             Visibility(
               visible: _message != null,
               child: Row(
@@ -253,44 +216,6 @@ class _MyAppState extends State<MyApp> {
       setState(() {
         sendMessage = "발송 시작1";
       });
-      var jsonData = await NetworkHelper(
-              url: '/api/list/okShop/MENU_MGT_MARKET_S004/mb4/Y')
-          .getData();
-      jsonResponse = jsonData["rows"];
-
-      setState(() {
-        sendMessage = "발송 시작2";
-      });
-
-      int i = 1;
-      for (var element in jsonResponse) {
-        var mb2 = element["mb2"];
-        var mb3 = element["mb3"];
-        var mb0 = element["mb0"];
-
-        final result =
-            await _channel.invokeMethod("sendInvokeMessage", [mb2, mb3]);
-
-        _resultData = result.toString();
-        setState(() {
-          sendMessage = "문자 발송완료 ${i++}건";
-          log.text = "${log.text + mb2 + mb3}\n";
-        });
-
-        await NetworkHelper(
-                url: "/SETDATA/okShop/MENU_MGT_MARKET_S004/update/mb0/$mb0")
-            .sendPostData({"mb4": "SendOK", "mb5": _resultData.toString()}, "");
-      }
-
-      setState(() {
-        sendMessage = "문자 발송완료 ${jsonResponse.length}건";
-      });
-    } else {
-      if (people.isEmpty) {
-        setState(() => _message = 'At Least 1 Person or Message Required');
-      } else {
-        _sendSMS(people);
-      }
     }
   }
 }
