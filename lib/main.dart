@@ -7,7 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:youngwonsms/sms_send.dart';
 import 'api_client.dart';
 
-void main() => runApp(MaterialApp(
+void main() => runApp(const MaterialApp(
       debugShowCheckedModeBanner: false,
       title: "App",
       home: MyApp(),
@@ -139,7 +139,9 @@ class _MyAppState extends State<MyApp> {
           },
         ),
         IconButton(
-          icon: const Icon(Icons.sms),
+          icon: const Row(
+            children: [Icon(Icons.sms_sharp), Text("SMS")],
+          ),
           onPressed: () {
             Navigator.push(context, MaterialPageRoute(
               builder: (context) {
