@@ -3,30 +3,32 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:youngwonsms/sms_send.dart';
 import 'api_client.dart';
 
-void main() => runApp(MyApp());
+void main() => runApp(MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: "App",
+      home: MyApp(),
+    ));
 
 class MyApp extends StatefulWidget {
+  const MyApp({super.key});
+
   @override
   _MyAppState createState() => _MyAppState();
 }
 
 class _MyAppState extends State<MyApp> {
-  late TextEditingController _controllerPeople, _controllerMessage;
   String? _message, body;
   String sendMessage = "문자 발송";
 
-  final String _canSendSMSMessage = 'Check is not run.';
   List<String> people = [];
   bool sendDirect = false;
   final MethodChannel _channel =
       const MethodChannel("com.shosft.youngwonsms/mms");
   List<DataRow> data = [];
-  String _resultData = "";
   TextEditingController log = TextEditingController();
 
   var flag = {};
@@ -38,8 +40,8 @@ class _MyAppState extends State<MyApp> {
   }
 
   getData() async {
-    DateFormat dateFormat = DateFormat("yyyy-MM-dd");
-    String string = dateFormat.format(DateTime.now());
+    // DateFormat dateFormat = DateFormat("yyyy-MM-dd");
+    //String string = dateFormat.format(DateTime.now());
     data = [];
     var jsonData =
         await NetworkHelper(url: '/api/list/okShop/MENU_MGT_MARKET_S004/mb4/Y')
@@ -56,7 +58,7 @@ class _MyAppState extends State<MyApp> {
         data.add(DataRow(cells: [
           DataCell(Text(
             element["mb1"],
-            style: TextStyle(fontSize: 10),
+            style: const TextStyle(fontSize: 10),
           )),
           DataCell(Text(mb2)),
           DataCell(ElevatedButton(
@@ -65,7 +67,7 @@ class _MyAppState extends State<MyApp> {
                 flag[mb2] = false;
               });
 
-              var response = await NetworkHelper(
+              await NetworkHelper(
                       url:
                           "/SETDATA/okShop/MENU_MGT_MARKET_S004/update/mb0/$mb0")
                   .sendPostData({"mb4": "SendOK", "mb5": "발송완료"}, "").then(
@@ -80,7 +82,7 @@ class _MyAppState extends State<MyApp> {
             style: ButtonStyle(
                 backgroundColor: MaterialStatePropertyAll<Color>(
                     mb4 == 'Y' ? Colors.blue : Colors.grey)),
-            child: Text(
+            child: const Text(
               "발송",
               style: TextStyle(color: Colors.white),
             ),
@@ -90,10 +92,7 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
-  Future<void> initPlatformState() async {
-    _controllerPeople = TextEditingController();
-    _controllerMessage = TextEditingController();
-  }
+  Future<void> initPlatformState() async {}
 
   Widget _phoneTile(String name) {
     return Padding(
@@ -120,7 +119,6 @@ class _MyAppState extends State<MyApp> {
                   padding: const EdgeInsets.all(0),
                   child: Text(
                     name,
-                    textScaleFactor: 1,
                     style: const TextStyle(fontSize: 12),
                   ),
                 )
@@ -132,62 +130,69 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        appBar: AppBar(title: const Text('영원무역 SMS  '), actions: [
-          IconButton(
-            icon: Icon(Icons.replay),
-            onPressed: () {
-              getData();
-            },
-          ),
-        ]),
-        body: ListView(
-          children: <Widget>[
-            if (people.isEmpty)
-              const SizedBox(height: 0)
-            else
-              SizedBox(
-                height: 90,
-                child: Padding(
-                  padding: const EdgeInsets.all(3),
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    children: List<Widget>.generate(people.length, (int index) {
-                      return _phoneTile(people[index]);
-                    }),
-                  ),
+    return Scaffold(
+      appBar: AppBar(title: const Text('영원무역 SMS  '), actions: [
+        IconButton(
+          icon: const Icon(Icons.replay),
+          onPressed: () {
+            getData();
+          },
+        ),
+        IconButton(
+          icon: const Icon(Icons.sms),
+          onPressed: () {
+            Navigator.push(context, MaterialPageRoute(
+              builder: (context) {
+                return const SmsApp();
+              },
+            ));
+          },
+        ),
+      ]),
+      body: ListView(
+        children: <Widget>[
+          if (people.isEmpty)
+            const SizedBox(height: 0)
+          else
+            SizedBox(
+              height: 90,
+              child: Padding(
+                padding: const EdgeInsets.all(3),
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: List<Widget>.generate(people.length, (int index) {
+                    return _phoneTile(people[index]);
+                  }),
                 ),
               ),
-            const Divider(),
-            DataTable(
-                columnSpacing: 0,
-                columns: const [
-                  DataColumn(label: Text('이름')),
-                  DataColumn(label: Text('전화')),
-                  DataColumn(label: Text('발송')),
-                ],
-                rows: data),
-            Visibility(
-              visible: _message != null,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Text(
-                        _message ?? 'No Data',
-                        maxLines: null,
-                      ),
+            ),
+          const Divider(),
+          DataTable(
+              columnSpacing: 0,
+              columns: const [
+                DataColumn(label: Text('이름')),
+                DataColumn(label: Text('전화')),
+                DataColumn(label: Text('발송')),
+              ],
+              rows: data),
+          Visibility(
+            visible: _message != null,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Text(
+                      _message ?? 'No Data',
+                      maxLines: null,
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -197,25 +202,5 @@ class _MyAppState extends State<MyApp> {
     DateFormat formatter = DateFormat('yyyy-MM-dd');
     var strToday = formatter.format(now);
     return strToday;
-  }
-
-  void _send() async {
-    Iterable jsonResponse = [];
-    if (sendDirect) {
-      setState(() {
-        sendMessage = "발송 시작";
-      });
-
-      var status = await Permission.sms.status;
-      if (status.isDenied) {
-        await [
-          Permission.sms,
-          Permission.phone,
-        ].request();
-      }
-      setState(() {
-        sendMessage = "발송 시작1";
-      });
-    }
   }
 }

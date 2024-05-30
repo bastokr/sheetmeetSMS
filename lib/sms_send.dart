@@ -1,3 +1,5 @@
+// ignore_for_file: library_private_types_in_public_api
+
 import 'dart:async';
 import 'dart:math';
 
@@ -8,14 +10,14 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'api_client.dart';
 
-void main() => runApp(MyApp());
+class SmsApp extends StatefulWidget {
+  const SmsApp({super.key});
 
-class MyApp extends StatefulWidget {
   @override
-  _MyAppState createState() => _MyAppState();
+  _SmsAppState createState() => _SmsAppState();
 }
 
-class _MyAppState extends State<MyApp> {
+class _SmsAppState extends State<SmsApp> {
   late TextEditingController _controllerPeople, _controllerMessage;
   String? _message, body;
   String sendMessage = "문자 발송";
@@ -24,7 +26,7 @@ class _MyAppState extends State<MyApp> {
   List<String> people = [];
   bool sendDirect = false;
   final MethodChannel _channel =
-      const MethodChannel("com.example.native_connection_study");
+      const MethodChannel("com.shosft.youngwonsms/mms");
 
   String _resultData = "";
   TextEditingController log = TextEditingController();
@@ -97,7 +99,6 @@ class _MyAppState extends State<MyApp> {
                   padding: const EdgeInsets.all(0),
                   child: Text(
                     name,
-                    textScaleFactor: 1,
                     style: const TextStyle(fontSize: 12),
                   ),
                 )
@@ -109,122 +110,125 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text('SMS/MMS Example'),
+    return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios),
+          onPressed: () {
+            Navigator.pop(context);
+          },
         ),
-        body: ListView(
-          children: <Widget>[
-            if (people.isEmpty)
-              const SizedBox(height: 0)
-            else
-              SizedBox(
-                height: 90,
-                child: Padding(
-                  padding: const EdgeInsets.all(3),
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    children: List<Widget>.generate(people.length, (int index) {
-                      return _phoneTile(people[index]);
-                    }),
-                  ),
-                ),
-              ),
-            ListTile(
-              leading: const Icon(Icons.people),
-              title: TextField(
-                controller: _controllerPeople,
-                decoration: const InputDecoration(labelText: '테스트 전번 추가'),
-                keyboardType: TextInputType.number,
-                onChanged: (String value) => setState(() {}),
-              ),
-              trailing: IconButton(
-                icon: const Icon(Icons.add),
-                onPressed: _controllerPeople.text.isEmpty
-                    ? null
-                    : () => setState(() {
-                          people.add(_controllerPeople.text.toString());
-                          _controllerPeople.clear();
-                        }),
-              ),
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.message),
-              title: TextField(
-                decoration: const InputDecoration(labelText: '테스트 메세지'),
-                controller: _controllerMessage,
-                onChanged: (String value) => setState(() {}),
-              ),
-            ),
-            const Divider(),
-            ListTile(
-              title: const Text('Can send SMS'),
-              subtitle: Text(_canSendSMSMessage),
-              trailing: IconButton(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                icon: const Icon(Icons.check),
-                onPressed: () {
-                  _canSendSMS();
-                },
-              ),
-            ),
-            SwitchListTile(
-                title: const Text('서버메세지 보내기'),
-                subtitle: const Text(
-                    'Should we skip the additional dialog? (Android only)'),
-                value: sendDirect,
-                onChanged: (bool newValue) {
-                  setState(() {
-                    sendDirect = newValue;
-                  });
-                }),
-            Padding(
-              padding: const EdgeInsets.all(8),
-              child: ElevatedButton(
-                style: ButtonStyle(
-                  backgroundColor: MaterialStateProperty.resolveWith(
-                      (states) => Theme.of(context).colorScheme.secondary),
-                  padding: MaterialStateProperty.resolveWith(
-                      (states) => const EdgeInsets.symmetric(vertical: 16)),
-                ),
-                onPressed: () {
-                  _send();
-                },
-                child: Text(
-                  sendMessage,
-                  style: Theme.of(context).textTheme.displayMedium,
+        title: const Text('SMS발송'),
+      ),
+      body: ListView(
+        children: <Widget>[
+          if (people.isEmpty)
+            const SizedBox(height: 0)
+          else
+            SizedBox(
+              height: 90,
+              child: Padding(
+                padding: const EdgeInsets.all(3),
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: List<Widget>.generate(people.length, (int index) {
+                    return _phoneTile(people[index]);
+                  }),
                 ),
               ),
             ),
-            TextFormField(
-              controller: log,
-              minLines:
-                  6, // any number you need (It works as the rows for the textarea)
-              keyboardType: TextInputType.multiline,
-              maxLines: null,
+          ListTile(
+            leading: const Icon(Icons.people),
+            title: TextField(
+              controller: _controllerPeople,
+              decoration: const InputDecoration(labelText: '테스트 전번 추가'),
+              keyboardType: TextInputType.number,
+              onChanged: (String value) => setState(() {}),
             ),
-            Visibility(
-              visible: _message != null,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Text(
-                        _message ?? 'No Data',
-                        maxLines: null,
-                      ),
+            trailing: IconButton(
+              icon: const Icon(Icons.add),
+              onPressed: _controllerPeople.text.isEmpty
+                  ? null
+                  : () => setState(() {
+                        people.add(_controllerPeople.text.toString());
+                        _controllerPeople.clear();
+                      }),
+            ),
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.message),
+            title: TextField(
+              decoration: const InputDecoration(labelText: '테스트 메세지'),
+              controller: _controllerMessage,
+              onChanged: (String value) => setState(() {}),
+            ),
+          ),
+          const Divider(),
+          ListTile(
+            title: const Text('Can send SMS'),
+            subtitle: Text(_canSendSMSMessage),
+            trailing: IconButton(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              icon: const Icon(Icons.check),
+              onPressed: () {
+                _canSendSMS();
+              },
+            ),
+          ),
+          SwitchListTile(
+              title: const Text('서버메세지 보내기'),
+              subtitle: const Text(
+                  'Should we skip the additional dialog? (Android only)'),
+              value: sendDirect,
+              onChanged: (bool newValue) {
+                setState(() {
+                  sendDirect = newValue;
+                });
+              }),
+          Padding(
+            padding: const EdgeInsets.all(8),
+            child: ElevatedButton(
+              style: ButtonStyle(
+                backgroundColor: MaterialStateProperty.resolveWith(
+                    (states) => Theme.of(context).colorScheme.secondary),
+                padding: MaterialStateProperty.resolveWith(
+                    (states) => const EdgeInsets.symmetric(vertical: 16)),
+              ),
+              onPressed: () {
+                _send();
+              },
+              child: Text(
+                sendMessage,
+                style: Theme.of(context).textTheme.displayMedium,
+              ),
+            ),
+          ),
+          TextFormField(
+            controller: log,
+            minLines:
+                6, // any number you need (It works as the rows for the textarea)
+            keyboardType: TextInputType.multiline,
+            maxLines: null,
+          ),
+          Visibility(
+            visible: _message != null,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Text(
+                      _message ?? 'No Data',
+                      maxLines: null,
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
